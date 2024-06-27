@@ -3,13 +3,33 @@ from virtualizarr import open_virtual_dataset
 import xarray as xr
 from dask.diagnostics import ProgressBar
 
-urls = [
-    "http://aims3.llnl.gov/thredds/fileServer/css03_data/CMIP6/ScenarioMIP/DKRZ/MPI-ESM1-2-HR/ssp126/r1i1p1f1/Amon/tas/gn/v20190710/tas_Amon_MPI-ESM1-2-HR_ssp126_r1i1p1f1_gn_201501-201912.nc",
-    "http://aims3.llnl.gov/thredds/fileServer/css03_data/CMIP6/ScenarioMIP/DKRZ/MPI-ESM1-2-HR/ssp126/r1i1p1f1/Amon/tas/gn/v20190710/tas_Amon_MPI-ESM1-2-HR_ssp126_r1i1p1f1_gn_202001-202412.nc",
-    "http://aims3.llnl.gov/thredds/fileServer/css03_data/CMIP6/ScenarioMIP/DKRZ/MPI-ESM1-2-HR/ssp126/r1i1p1f1/Amon/tas/gn/v20190710/tas_Amon_MPI-ESM1-2-HR_ssp126_r1i1p1f1_gn_202501-202912.nc",
-    "http://aims3.llnl.gov/thredds/fileServer/css03_data/CMIP6/ScenarioMIP/DKRZ/MPI-ESM1-2-HR/ssp126/r1i1p1f1/Amon/tas/gn/v20190710/tas_Amon_MPI-ESM1-2-HR_ssp126_r1i1p1f1_gn_203001-203412.nc",
-]
-json_filename = "combined_full.json"
+import sys
+import os
+
+
+DATA_NODE_PREFIX="http://aims3.llnl.gov/thredds/fileServer/css03_data"
+LOCAL_PREFIX="/p/css03/esgf_publish"
+OUT_LOC="/p/user_pub/work/vzarr"
+
+fmt = sys.argv[1]
+rel_path = ""
+dsid =""
+
+if fmt == "-path":
+    rel_path = sys.argv[2]
+    dsid = rel_path.replace("/",".")
+else:
+    dsid = sys.argv[2]
+    rel_path = dsid.replace('.','/')
+
+
+
+urls = [f"{DATA_NODE_PREFIX}/{rel_path}/{fn}" for fn in os.listdir(f"{LOCAL_PREFIX}/{rel_path}")]
+    
+
+json_filename = f"{OUT_LOC}/{dsid}.json"
+
+
 
 
 # load virtual datasets in serial
@@ -30,14 +50,14 @@ combined_vds = xr.combine_nested(
 combined_vds.virtualize.to_kerchunk(json_filename, format="json")
 
 ## test load and print the the mean of the output
-print(f"Loading the mean of the virtual dataset from {json_filename=}")
+# print(f"Loading the mean of the virtual dataset from {json_filename=}")
 
-ds = xr.open_dataset(
-    json_filename, 
-    engine='kerchunk',
-    chunks={},
-)
-print(f"Dataset before mean: {ds}")
-with ProgressBar():
-    ds_mean = ds.mean().load()
-print(ds_mean) 
+# ds = xr.open_dataset(
+#     json_filename, 
+#     engine='kerchunk',
+#     chunks={},
+# )
+# print(f"Dataset before mean: {ds}")
+# with ProgressBar():
+#     ds_mean = ds.mean().load()
+# print(ds_mean) 
